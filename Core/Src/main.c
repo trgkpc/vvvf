@@ -216,8 +216,11 @@ int main(void)
 
   // timの設定
   stop_tim();
-  uint32_t my_prescale = (uint32_t)(hz_to_step(2.0f*10.0f*1000.0f)+0.5f);
-  uint32_t T = 10000;
+  const float f_kHz = 3.0f;
+  float step_to_prescale = hz_to_step(2.0f*f_kHz*1000.0f);
+  uint32_t my_prescale = (uint32_t)(step_to_prescale + 0.5f);
+
+  uint32_t T = 1;
   user_pwm_tim1(my_prescale, 2*T, T);
   user_pwm_tim17(my_prescale, 2*T, T);
   __HAL_TIM_SET_COUNTER(&htim1, 0);
