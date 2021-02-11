@@ -21,6 +21,9 @@
 #include <stdbool.h>
 #include "main.h"
 
+#define GREEN_LED GPIO_PIN_0
+#define RED_LED GPIO_PIN_1
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -216,7 +219,7 @@ int main(void)
 
   // timの設定
   stop_tim();
-  const float f_kHz = 3.0f;
+  const float f_kHz = 300.0f;
   float step_to_prescale = hz_to_step(2.0f*f_kHz*1000.0f);
   uint32_t my_prescale = (uint32_t)(step_to_prescale + 0.5f);
 
@@ -228,10 +231,9 @@ int main(void)
   
   start_tim();
   valid_pwm(true);
-
   
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, GPIO_PIN_SET);
     
   while (1)
   {
@@ -239,7 +241,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     HAL_Delay(100);
-    HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_0|GPIO_PIN_1);
+    HAL_GPIO_TogglePin(GPIOF, GREEN_LED);
 
   }
   /* USER CODE END 3 */
