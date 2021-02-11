@@ -18,6 +18,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <stdbool.h>
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -133,28 +134,41 @@ void user_pwm_tim17(uint32_t prescale, uint32_t period, uint32_t pulse)
   HAL_TIM_PWM_ConfigChannel(&htim17, &sConfigOC, TIM_CHANNEL_1);
 }
 
-void start_pwm()
+void start_tim()
 {
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
-  
-  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start(&htim15, TIM_CHANNEL_1);
-  
-  HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Start(&htim17, TIM_CHANNEL_1);
+  HAL_TIM_Base_Start(&htim1);
+  HAL_TIM_Base_Start(&htim15);
+  HAL_TIM_Base_Start(&htim17);
 }
 
-void stop_pwm()
+void stop_tim()
 {
-  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
-  
-  HAL_TIM_PWM_Stop(&htim15, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Stop(&htim15, TIM_CHANNEL_1);
-  
-  HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
-  HAL_TIMEx_PWMN_Stop(&htim17, TIM_CHANNEL_1);
+  HAL_TIM_Base_Stop(&htim1);
+  HAL_TIM_Base_Stop(&htim15);
+  HAL_TIM_Base_Stop(&htim17);
+}
+
+void valid_pwm(bool is_valid)
+{
+  if(is_valid){
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+    
+    HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(&htim15, TIM_CHANNEL_1);
+    
+    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(&htim17, TIM_CHANNEL_1);
+  }else{
+    HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Stop(&htim1, TIM_CHANNEL_1);
+    
+    HAL_TIM_PWM_Stop(&htim15, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Stop(&htim15, TIM_CHANNEL_1);
+    
+    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Stop(&htim17, TIM_CHANNEL_1);
+  }
 }
 
 /* USER CODE END 0 */
@@ -199,11 +213,19 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  // timの設定
+  stop_tim();
   uint32_t my_prescale = (uint32_t)(hz_to_step(2.0f*10.0f*1000.0f)+0.5f);
-  user_pwm_tim1(my_prescale, 10000, 5000);
-  user_pwm_tim15(my_prescale, 10000, 5000);
-  user_pwm_tim17(my_prescale, 10000, 5000);
-  start_pwm();
+  uint32_t T = 10000;
+  user_pwm_tim1(my_prescale, 2*T, T);
+  user_pwm_tim17(my_prescale, 2*T, T);
+  __HAL_TIM_SET_COUNTER(&htim1, 0);
+  __HAL_TIM_SET_COUNTER(&htim17, T);
+  
+  start_tim();
+  valid_pwm(true);
+
   
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_0, GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -236,7 +258,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -245,12 +269,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
